@@ -54,28 +54,31 @@
 		}).addTo(map);
 
 
-		var icon = L.MakiMarkers.icon({icon: "golf", color: "#c2403a", size: "m"})
-	  var points = omnivore.geojson('data/snakes_capture.geojson')
+		// var icon = L.MakiMarkers.icon({icon: "golf", color: "#c2403a", size: "m"})
+	  var capture_points = omnivore.geojson('data/snakes_capture.geojson')
 			.on('ready', function() {
-				points.eachLayer(function(l){
+				capture_points.eachLayer(function(l){
 					console.log(l);
 					var coords = l.feature.geometry.coordinates;
-					var m = L.marker([coords[1],coords[0]], {icon: icon});
+					var m = L.marker([coords[1],coords[0]],
+						{icon: L.MakiMarkers.icon({icon: "golf", color: "#c2403a", size: "s"})
+					});
 					m.addTo(map);
-				})
-			});
+			})
+		});
 
 		// var icon = L.MakiMarkers.icon({icon: "golf", color: "#85afdf", size: "m"})
-		// var points = omnivore.geojson('data/snakes_release.geojson')
-		// 	.on('ready', function() {
-		// 		points.eachLayer(function(l){
-		// 			console.log(l);
-		// 			var coords = l.feature.geometry.coordinates;
-		// 			var m = L.marker([coords[1],coords[0]], {icon: icon});
-		// 			m.addTo(map);
-		// 		})
-		// 	});
-
+		var release_points = omnivore.geojson('data/snakes_release.geojson')
+			.on('ready', function() {
+				release_points.eachLayer(function(l){
+					console.log(l);
+					var coords = l.feature.geometry.coordinates;
+					var m = L.marker([coords[1],coords[0]],
+						{icon: L.MakiMarkers.icon({icon: "golf", color: "#85afdf", size: "s"})}
+					);
+					m.addTo(map);
+			})
+		});
 
 	</script>
 
