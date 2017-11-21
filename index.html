@@ -38,7 +38,7 @@
 		var DEFAULT_ZOOM = 8;
 
 		L.MakiMarkers.accessToken = "pk.eyJ1IjoibmlyeWFyaXYiLCJhIjoiQjdJeWdqZyJ9.pZOwn6stABGoptmp0DH1wg";
-		var icon = L.MakiMarkers.icon({icon: "golf", color: "#85AFDF", size: "m"});
+		// var icon = L.MakiMarkers.icon({icon: "golf", color: "#85AFDF", size: "m"});
 
 		var map = L.map('map', { scrollWheelZoom: true }).setView(MAP_CENTER, DEFAULT_ZOOM);
 
@@ -54,27 +54,28 @@
 		}).addTo(map);
 
 
-		function eachLayer(layer) {
-		    var feature = layer.toGeoJSON();
-				var i = 0;
-
-				if (feature.geometry.type === 'Polygon') {
-					var centroid = turf.centroid(feature);
-					var coords = centroid.geometry.coordinates;
-				} else {
-					var coords = feature.geometry.coordinates;
-				}
-
-				var m = L.marker([coords[1],coords[0]], {icon: icon});
-				console.log(i++);
-				if (feature.properties.name) m.bindPopup(feature.properties.name);
-				m.addTo(map);
-		}
-
+		var icon = L.MakiMarkers.icon({icon: "golf", color: "#c2403a", size: "m"})
 	  var points = omnivore.geojson('data/snakes_capture.geojson')
 			.on('ready', function() {
-					points.eachLayer(eachLayer);
+				points.eachLayer(function(l){
+					console.log(l);
+					var coords = l.feature.geometry.coordinates;
+					var m = L.marker([coords[1],coords[0]], {icon: icon});
+					m.addTo(map);
+				})
 			});
+
+		// var icon = L.MakiMarkers.icon({icon: "golf", color: "#85afdf", size: "m"})
+		// var points = omnivore.geojson('data/snakes_release.geojson')
+		// 	.on('ready', function() {
+		// 		points.eachLayer(function(l){
+		// 			console.log(l);
+		// 			var coords = l.feature.geometry.coordinates;
+		// 			var m = L.marker([coords[1],coords[0]], {icon: icon});
+		// 			m.addTo(map);
+		// 		})
+		// 	});
+
 
 	</script>
 
