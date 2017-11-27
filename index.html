@@ -10,6 +10,8 @@
 
  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
  <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
+ 	<!-- <script src='//api.tiles.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.min.js'></script> -->
+ 	<script src="Leaflet.MakiMarkers.js"></script>
 
 
 	<style type="text/css">
@@ -28,9 +30,10 @@
 <body>
 	<div id="map"></div>
 
-	<script src="https://unpkg.com/@turf/turf@3.5.2/turf.min.js"></script>
-	<script src='//api.tiles.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.min.js'></script>
-	<script src="Leaflet.MakiMarkers.js"></script>
+	<script
+			  src="https://code.jquery.com/jquery-3.2.1.min.js"
+			  integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
+			  crossorigin="anonymous"></script>
 
 	<script type="text/javascript">
 
@@ -42,8 +45,6 @@
 
 		var map = L.map('map', { scrollWheelZoom: true }).setView(MAP_CENTER, DEFAULT_ZOOM);
 
-		// map.locate({setView : true, maxZoom: 13});
-
 		tile_url = '//{s}.tiles.mapbox.com/v3/niryariv.map-n3zuwkkz/{z}/{x}/{y}.png';
 		// tile_url = "http://niryariv.github.io/israel_tiles/{z}/{x}/{y}.png";
 
@@ -54,33 +55,49 @@
 		}).addTo(map);
 
 
-		// var icon = L.MakiMarkers.icon({icon: "golf", color: "#c2403a", size: "m"})
-	  var capture_points = omnivore.geojson('data/snakes_capture.geojson')
-			.on('ready', function() {
-				capture_points.eachLayer(function(l){
-					console.log(l);
-					var coords = l.feature.geometry.coordinates;
-					var m = L.marker([coords[1],coords[0]],
-						{icon: L.MakiMarkers.icon({icon: "golf", color: "#c2403a", size: "s"})
-					});
-					m.addTo(map);
-			})
-		});
+		function popupContent(data){
+			return(
+				"<b>" + data['מספר דיווח'] + "</b>"
+			);
+		}
 
-		// var icon = L.MakiMarkers.icon({icon: "golf", color: "#85afdf", size: "m"})
-		var release_points = omnivore.geojson('data/snakes_release.geojson')
-			.on('ready', function() {
-				release_points.eachLayer(function(l){
-					console.log(l);
-					var coords = l.feature.geometry.coordinates;
-					var m = L.marker([coords[1],coords[0]],
-						{icon: L.MakiMarkers.icon({icon: "golf", color: "#85afdf", size: "s"})}
-					);
-					m.addTo(map);
+
+		$.getJSON('data/snakes.json', function(data){
+			$.each(data, function(k,item){
+				if (10265 == item['מספר דיווח']) console.log(item);
+
+				var capture_loc = L.latLng(item.capture_x, item.capture_y);
+				var release_loc = L.latLng(item.release_x, item.release_y);
+
+				var capture = L.marker(capture_loc,
+								{
+									icon: L.MakiMarkers.icon({icon: "golf", color: "#c2403a", size: "s"}),
+									riseOnHover: true
+								}).on({
+										mouseover: function(){L.polyline([capture_loc, release_loc]).addTo(map)}
+								});
+
+				var release = L.marker(release_loc,
+								{
+									icon: L.MakiMarkers.icon({icon: "golf", color: "#85afdf", size: "s"}),
+									riseOnHover: true
+								}).on({
+										mouseover: function(){L.polyline([capture_loc, release_loc]).addTo(map)}
+								});
+				// var line = L.polyline([capture_loc, release_loc]);
+				// line.bindPopup(popupContent(item));
+
+
+				if (item.capture_x != '' && item.release_x != '') {
+					capture.addTo(map);
+					release.addTo(map);
+					// line.addTo(map);
+				}
+
 			})
-		});
+		})
+
 
 	</script>
-
 	</body>
 </html>
