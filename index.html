@@ -57,10 +57,12 @@
     }
 
 
-    L.tileLayer('//{s}.tiles.mapbox.com/v3/niryariv.map-n3zuwkkz/{z}/{x}/{y}.png').addTo(map);
+    var tiles = 'https://api.mapbox.com/styles/v1/niryariv/cjamccmte0z492so572ynsqt1/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1IjoibmlyeWFyaXYiLCJhIjoiQjdJeWdqZyJ9.pZOwn6stABGoptmp0DH1wg';
+    // '//{s}.tiles.mapbox.com/v3/niryariv.map-n3zuwkkz/{z}/{x}/{y}.png'
+
+    L.tileLayer(tiles).addTo(map);
     // L.esri.basemapLayer('DarkGray').addTo(map);
 
-    // var canvasRenderer = L.canvas();
 
     Papa.parse('./data/snakes_new.csv', {
       download: true,
