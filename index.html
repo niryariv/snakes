@@ -1,103 +1,148 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-	<title>לכידות נחשים</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <meta name="description" content="Canvas Flowmap Layer with LeafletJS." />
 
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-	<meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>לכידת ושחרור נחשים</title>
 
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css" />
 
- <link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" />
- <script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js"></script>
- 	<!-- <script src='//api.tiles.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.min.js'></script> -->
- 	<script src="Leaflet.MakiMarkers.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
 
+    #map {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      right: 0;
+      left: 0;
+    }
 
-	<style type="text/css">
-		body {
-		    padding: 0;
-		    margin: 0;
-		    background-color: #fff;
-		}
-
-		html, body, #map {
-		    height: 100%;
-		}
-	</style>
+  </style>
 
 </head>
+
 <body>
-	<div id="map"></div>
 
-	<script
-			  src="https://code.jquery.com/jquery-3.2.1.min.js"
-			  integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4="
-			  crossorigin="anonymous"></script>
+  <div id="map"></div>
 
-	<script type="text/javascript">
+  <!-- first load LeafletJS -->
+  <script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script>
 
-		var MAP_CENTER = [32.2, 35.19];
-		var DEFAULT_ZOOM = 8;
+  <!-- load Esri Leaflet because we want to use an Esri basemap -->
+  <script src="https://unpkg.com/esri-leaflet@2.1.1/dist/esri-leaflet.js"></script>
 
-		L.MakiMarkers.accessToken = "pk.eyJ1IjoibmlyeWFyaXYiLCJhIjoiQjdJeWdqZyJ9.pZOwn6stABGoptmp0DH1wg";
-		// var icon = L.MakiMarkers.icon({icon: "golf", color: "#85AFDF", size: "m"});
+  <!-- load animation tweening lib requirement for CanvasFlowMapLayer -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/17.1.1/Tween.min.js"></script>
 
-		var map = L.map('map', { scrollWheelZoom: true }).setView(MAP_CENTER, DEFAULT_ZOOM);
+  <!-- then load CanvasFlowMapLayer -->
+  <script src="./CanvasFlowmapLayer.js"></script>
 
-		tile_url = '//{s}.tiles.mapbox.com/v3/niryariv.map-n3zuwkkz/{z}/{x}/{y}.png';
-		// tile_url = "http://niryariv.github.io/israel_tiles/{z}/{x}/{y}.png";
+  <!-- also load 3rd-party CSV parsing libary just for this demo  -->
+  <script src="https://unpkg.com/papaparse@4.3.6/papaparse.min.js"></script>
 
+  <script>
+    var map = L.map('map');
 
-		L.tileLayer(tile_url, {
-			// maxZoom: 16,
-			// minZoom: 9
-		}).addTo(map);
-
-
-		function popupContent(data){
-			return(
-				"<b>" + data['מספר דיווח'] + "</b>"
-			);
-		}
+    if (L.Browser.mobile) {
+      map.setView([15, -21.95], 2);
+    } else {
+      map.setView([32, 35], 8);
+    }
 
 
-		$.getJSON('data/snakes.json', function(data){
-			$.each(data, function(k,item){
-				if (10265 == item['מספר דיווח']) console.log(item);
+    L.tileLayer('//{s}.tiles.mapbox.com/v3/niryariv.map-n3zuwkkz/{z}/{x}/{y}.png').addTo(map);
+    // L.esri.basemapLayer('DarkGray').addTo(map);
 
-				var capture_loc = L.latLng(item.capture_x, item.capture_y);
-				var release_loc = L.latLng(item.release_x, item.release_y);
+    // var canvasRenderer = L.canvas();
 
-				var capture = L.marker(capture_loc,
-								{
-									icon: L.MakiMarkers.icon({icon: "golf", color: "#c2403a", size: "s"}),
-									riseOnHover: true
-								}).on({
-										mouseover: function(){L.polyline([capture_loc, release_loc]).addTo(map)}
-								});
+    Papa.parse('./data/snakes_new.csv', {
+      download: true,
+      header: true,
+      dynamicTyping: true,
+      skipEmptyLines: true,
+      style: function(geoJsonFeature) {
+        if (geoJsonFeature.properties.isOrigin) {
+          return {
+            renderer: canvasRenderer, // recommended to use your own L.canvas()
+            radius: 3,
+            weight: 1,
+            color: 'rgb(195, 255, 62)',
+            fillColor: 'rgba(195, 255, 62, 0.6)',
+            fillOpacity: 0.6
+          };
+        } else {
+          return {
+            renderer: canvasRenderer,
+            radius: 5,
+            weight: 0.25,
+            color: 'rgb(17, 142, 170)',
+            fillColor: 'rgb(17, 142, 170)',
+            fillOpacity: 0.7
+          };
+        }
+      },
+      complete: function(results) {
+        results.data = results.data.filter(function(datum){ return (datum.release_x > 0 && datum.capture_x > 0)});
+        var geoJsonFeatureCollection = {
+          type: 'FeatureCollection',
+          features: results.data.map(function(datum) {
+            return {
+              type: 'Feature',
+              geometry: {
+                type: 'Point',
+                coordinates: [datum.capture_x, datum.capture_y]
+              },
+              properties: datum
+            }
+          })
+        };
 
-				var release = L.marker(release_loc,
-								{
-									icon: L.MakiMarkers.icon({icon: "golf", color: "#85afdf", size: "s"}),
-									riseOnHover: true
-								}).on({
-										mouseover: function(){L.polyline([capture_loc, release_loc]).addTo(map)}
-								});
-				// var line = L.polyline([capture_loc, release_loc]);
-				// line.bindPopup(popupContent(item));
+        var oneToManyFlowmapLayer = L.canvasFlowmapLayer(geoJsonFeatureCollection, {
+          originAndDestinationFieldIds: {
+            originUniqueIdField: 'מספר דיווח',
+            originGeometry: {
+              x: 'capture_x',
+              y: 'capture_y'
+            },
+            destinationUniqueIdField: 'מספר דיווח',
+            destinationGeometry: {
+              x: 'release_x',
+              y: 'release_y'
+            }
+          },
+          pathDisplayMode: 'all',
+          animationStarted: true,
+          animationEasingFamily: 'Cubic',
+          animationEasingType: 'In',
+          animationDuration: 2000
+        }).addTo(map);
 
 
-				if (item.capture_x != '' && item.release_x != '') {
-					capture.addTo(map);
-					release.addTo(map);
-					// line.addTo(map);
-				}
+        // since this demo is using the optional "pathDisplayMode" as "selection",
+        // it is up to the developer to wire up a click or mouseover listener
+        // and then call the "selectFeaturesForPathDisplay()" method to inform the layer
+        // which Bezier paths need to be drawn
+        oneToManyFlowmapLayer.on('click', function(e) {
+          if (e.sharedOriginFeatures.length) {
+            oneToManyFlowmapLayer.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW');
+          }
+          if (e.sharedDestinationFeatures.length) {
+            oneToManyFlowmapLayer.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW');
+          }
+        });
 
-			})
-		})
+      }
+    });
 
+  </script>
 
-	</script>
-	</body>
+</body>
+
 </html>
